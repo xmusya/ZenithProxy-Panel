@@ -1,0 +1,1239 @@
+<!DOCTYPE html>
+<html lang="en" data-mode="light">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>ZenithProxy · MD3 Panel</title>
+<style>
+:root{
+  --md-primary:#6750A4; --md-on-primary:#FFFFFF; --md-primary-container:#EADDFF;
+  --md-on-primary-container:#21005D; --md-secondary-container:#E8DEF8;
+  --md-on-secondary-container:#1D192B; --md-surface:#FEF7FF; --md-surface-dim:#DED8E1;
+  --md-surface-container-lowest:#FFFFFF; --md-surface-container-low:#F7F2FA;
+  --md-surface-container:#F3EDF7; --md-surface-container-high:#ECE6F0;
+  --md-surface-container-highest:#E6E0E9; --md-on-surface:#1D1B20;
+  --md-on-surface-variant:#49454F; --md-outline:#79747E; --md-outline-variant:#CAC4D0;
+  --md-error:#B3261E; --md-on-error:#FFFFFF; --md-error-container:#F9DEDC;
+  --md-ok:#386A20; --md-ok-container:#B8F397; --md-on-ok-container:#0D2000;
+  --md-warn:#7A5900; --md-warn-container:#FFDF9B;
+  --shadow-1:0 1px 2px rgba(0,0,0,.3),0 1px 3px 1px rgba(0,0,0,.15);
+  --shadow-2:0 1px 2px rgba(0,0,0,.3),0 2px 6px 2px rgba(0,0,0,.15);
+  --shadow-3:0 4px 8px 3px rgba(0,0,0,.15),0 1px 3px rgba(0,0,0,.3);
+  --radius-s:8px; --radius-m:12px; --radius-l:16px; --radius-xl:28px;
+}
+/* dark palette — applied via data-mode so it works for system AND explicit choice */
+:root[data-mode="dark"]{
+  --md-primary:#D0BCFF; --md-on-primary:#381E72; --md-primary-container:#4F378B;
+  --md-on-primary-container:#EADDFF; --md-secondary-container:#4A4458;
+  --md-on-secondary-container:#E8DEF8; --md-surface:#141218; --md-surface-dim:#141218;
+  --md-surface-container-lowest:#0F0D13; --md-surface-container-low:#1D1B20;
+  --md-surface-container:#211F26; --md-surface-container-high:#2B2930;
+  --md-surface-container-highest:#36343B; --md-on-surface:#E6E0E9;
+  --md-on-surface-variant:#CAC4D0; --md-outline:#938F99; --md-outline-variant:#49454F;
+  --md-error:#F2B8B5; --md-on-error:#601410; --md-error-container:#8C1D18;
+  --md-ok:#9DD67E; --md-ok-container:#23500C; --md-on-ok-container:#B8F397;
+  --md-warn:#E7C05A; --md-warn-container:#574400;
+  --shadow-1:0 1px 2px rgba(0,0,0,.5); --shadow-2:0 1px 3px rgba(0,0,0,.5),0 2px 6px rgba(0,0,0,.4);
+  --shadow-3:0 6px 12px rgba(0,0,0,.5);
+}
+*{box-sizing:border-box;margin:0;padding:0}
+html,body{height:100%}
+body{
+  font-family:Roboto,"Segoe UI",system-ui,-apple-system,sans-serif;
+  background:var(--md-surface); color:var(--md-on-surface);
+  font-size:14px; line-height:1.45; -webkit-font-smoothing:antialiased;
+}
+button{font-family:inherit}
+/* ===== Layout ===== */
+#app{display:flex;height:100vh;overflow:hidden}
+#nav{
+  width:88px; background:var(--md-surface-container-low);
+  display:flex; flex-direction:column; align-items:center; padding:16px 0 20px; gap:6px;
+  border-right:1px solid var(--md-outline-variant); flex-shrink:0; overflow-y:auto;
+}
+#brand{width:48px;height:48px;border-radius:16px;background:var(--md-primary);
+  color:var(--md-on-primary);display:flex;align-items:center;justify-content:center;
+  font-weight:700;font-size:18px;margin-bottom:14px;box-shadow:var(--shadow-1);flex-shrink:0}
+#nav-items{display:flex;flex-direction:column;align-items:center;gap:6px;width:100%}
+.nav-item{
+  width:76px;padding:10px 0 8px;border:none;background:transparent;cursor:pointer;
+  display:flex;flex-direction:column;align-items:center;gap:5px;
+  color:var(--md-on-surface-variant);border-radius:var(--radius-xl);
+  font-size:11px;font-weight:500;letter-spacing:.3px;transition:background .15s;
+}
+.nav-item svg{width:22px;height:22px;fill:currentColor}
+.nav-item:hover{background:color-mix(in srgb,var(--md-on-surface) 8%,transparent)}
+.nav-item.active{background:var(--md-secondary-container);color:var(--md-on-secondary-container)}
+#main{flex:1;display:flex;flex-direction:column;min-width:0}
+#topbar{
+  height:64px;display:flex;align-items:center;gap:16px;padding:0 24px;
+  background:var(--md-surface-container);border-bottom:1px solid var(--md-outline-variant);
+  flex-shrink:0;
+}
+#topbar h1{font-size:20px;font-weight:500;letter-spacing:.15px}
+#topbar .sub{color:var(--md-on-surface-variant);font-size:12px;margin-left:auto}
+#content{flex:1;overflow-y:auto;padding:24px;scroll-behavior:smooth}
+.view{display:none;animation:fade .18s ease}
+.view.active{display:block}
+@keyframes fade{from{opacity:0;transform:translateY(4px)}to{opacity:1;transform:none}}
+/* ===== Cards ===== */
+.card{
+  background:var(--md-surface-container-lowest);border:1px solid var(--md-outline-variant);
+  border-radius:var(--radius-l);padding:20px;box-shadow:var(--shadow-1);margin-bottom:16px;
+}
+.card h2{font-size:16px;font-weight:600;margin-bottom:14px;display:flex;align-items:center;gap:8px}
+.card h2 .hint{font-size:12px;font-weight:400;color:var(--md-on-surface-variant)}
+.grid{display:grid;gap:16px}
+.grid.cols-3{grid-template-columns:repeat(auto-fit,minmax(260px,1fr))}
+.grid.cols-4{grid-template-columns:repeat(auto-fit,minmax(200px,1fr))}
+.stat{background:var(--md-surface-container-low);border-radius:var(--radius-m);padding:14px 16px}
+.stat .label{font-size:11px;letter-spacing:.5px;text-transform:uppercase;color:var(--md-on-surface-variant);font-weight:600}
+.stat .value{font-size:22px;font-weight:600;margin-top:4px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.stat .value.small{font-size:15px;font-weight:500;white-space:normal;word-break:break-word}
+.stat .sub{font-size:12px;color:var(--md-on-surface-variant);margin-top:2px}
+/* ===== Chips / badges ===== */
+.chip{
+  display:inline-flex;align-items:center;gap:6px;height:26px;padding:0 10px;
+  border-radius:8px;font-size:12px;font-weight:600;
+}
+.chip.ok{background:var(--md-ok-container);color:var(--md-on-ok-container)}
+.chip.off{background:var(--md-surface-container-highest);color:var(--md-on-surface-variant)}
+.chip.warn{background:var(--md-warn-container);color:var(--md-on-surface)}
+.chip.err{background:var(--md-error-container);color:var(--md-error)}
+.dot{width:8px;height:8px;border-radius:50%;background:currentColor}
+/* ===== Buttons ===== */
+.btn{
+  border:none;cursor:pointer;height:40px;padding:0 24px;border-radius:var(--radius-xl);
+  font-size:14px;font-weight:600;letter-spacing:.1px;transition:box-shadow .15s,transform .1s;
+}
+.btn:active{transform:scale(.98)}
+.btn.filled{background:var(--md-primary);color:var(--md-on-primary)}
+.btn.filled:hover{box-shadow:var(--shadow-2)}
+.btn.tonal{background:var(--md-secondary-container);color:var(--md-on-secondary-container)}
+.btn.tonal:hover{box-shadow:var(--shadow-1)}
+.btn.text{background:transparent;color:var(--md-primary)}
+.btn.text:hover{background:color-mix(in srgb,var(--md-primary) 8%,transparent)}
+.btn.outlined{background:transparent;color:var(--md-primary);border:1.5px solid var(--md-outline)}
+.btn.outlined:hover{background:color-mix(in srgb,var(--md-primary) 8%,transparent)}
+.btn.danger{background:var(--md-error);color:var(--md-on-error)}
+.btn.danger:hover{box-shadow:var(--shadow-2)}
+.btn.small{height:32px;padding:0 16px;font-size:13px}
+.btn:disabled{opacity:.45;cursor:default}
+/* ===== Inputs ===== */
+.field{
+  height:48px;border:1px solid var(--md-outline);border-radius:var(--radius-s) var(--radius-s) 0 0;
+  background:var(--md-surface-container-lowest);display:flex;align-items:center;padding:0 14px;gap:8px;
+}
+.field:focus-within{border-color:var(--md-primary);border-width:2px;padding:0 13px}
+.field input{
+  border:none;outline:none;background:transparent;flex:1;font-size:15px;color:var(--md-on-surface);
+}
+.field label{font-size:12px;color:var(--md-on-surface-variant)}
+select{
+  height:40px;border:1px solid var(--md-outline);border-radius:var(--radius-s);
+  background:var(--md-surface-container-lowest);color:var(--md-on-surface);padding:0 10px;font-size:14px;
+}
+/* ===== Switch (MD3) ===== */
+.mswitch{position:relative;display:inline-block;width:52px;height:32px;flex-shrink:0}
+.mswitch input{opacity:0;width:0;height:0}
+.mswitch .track{
+  position:absolute;inset:0;border-radius:16px;background:var(--md-surface-container-highest);
+  border:2px solid var(--md-outline);transition:.2s;cursor:pointer;
+}
+.mswitch .thumb{
+  position:absolute;top:6px;left:6px;width:16px;height:16px;border-radius:50%;
+  background:var(--md-outline);transition:.2s;pointer-events:none;
+}
+.mswitch input:checked + .track{background:var(--md-primary);border-color:var(--md-primary)}
+.mswitch input:checked ~ .thumb{left:28px;top:4px;width:24px;height:24px;background:var(--md-on-primary)}
+.mswitch input:focus-visible + .track{outline:2px solid var(--md-primary);outline-offset:2px}
+/* ===== Modules ===== */
+.mod-card{
+  background:var(--md-surface-container-low);border:1px solid var(--md-outline-variant);
+  border-radius:var(--radius-m);padding:14px 16px;display:flex;align-items:center;gap:12px;
+}
+.mod-card .name{font-weight:600;flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.mod-card .state{font-size:11px;color:var(--md-on-surface-variant)}
+/* ===== Commands ===== */
+.cmd-run{display:flex;gap:12px;position:relative;flex-wrap:wrap}
+.cmd-run .field{flex:1;min-width:240px}
+.suggestions{
+  position:absolute;top:52px;left:0;right:0;background:var(--md-surface-container-lowest);
+  border:1px solid var(--md-outline-variant);border-radius:var(--radius-s);box-shadow:var(--shadow-2);
+  z-index:30;max-height:220px;overflow-y:auto;display:none;
+}
+.suggestions.show{display:block}
+.suggestions div{padding:9px 14px;cursor:pointer;font-family:"JetBrains Mono",Consolas,monospace;font-size:13px}
+.suggestions div:hover,.suggestions div.hl{background:var(--md-secondary-container);color:var(--md-on-secondary-container)}
+.output{
+  background:var(--md-surface-container-high);border-radius:var(--radius-m);padding:14px 16px;
+  font-family:"JetBrains Mono",Consolas,monospace;font-size:13px;white-space:pre-wrap;word-break:break-word;
+  border-left:4px solid var(--md-primary);max-height:320px;overflow:auto;display:none;
+}
+.output.show{display:block}
+.output.ok{border-left-color:var(--md-ok)}
+.output.err{border-left-color:var(--md-error)}
+.history{display:flex;flex-wrap:wrap;gap:8px;margin-top:12px}
+.history .chip{cursor:pointer;border:none;font-family:inherit}
+.history .chip:hover{filter:brightness(.95)}
+.cmd-list{width:100%;border-collapse:collapse;font-size:13px}
+.cmd-list th{
+  text-align:left;padding:8px 10px;color:var(--md-on-surface-variant);font-size:11px;
+  text-transform:uppercase;letter-spacing:.5px;border-bottom:1px solid var(--md-outline-variant);
+}
+.cmd-list td{padding:8px 10px;border-bottom:1px solid var(--md-outline-variant);vertical-align:top}
+.cmd-list tr:hover td{background:var(--md-surface-container-low)}
+.cmd-list .cname{font-family:"JetBrains Mono",Consolas,monospace;font-weight:600;color:var(--md-primary)}
+/* ===== Config ===== */
+.cfg-layout{display:grid;grid-template-columns:250px 1fr;gap:16px;align-items:start}
+@media(max-width:860px){.cfg-layout{grid-template-columns:1fr}}
+.cfg-list{display:flex;flex-direction:column;gap:6px}
+.cfg-item{
+  text-align:left;border:1px solid var(--md-outline-variant);background:var(--md-surface-container-low);
+  padding:10px 12px;border-radius:var(--radius-s);cursor:pointer;font-size:13px;font-weight:500;
+}
+.cfg-item .f{display:block;font-size:11px;color:var(--md-on-surface-variant);font-weight:400}
+.cfg-item.active{background:var(--md-secondary-container);color:var(--md-on-secondary-container);border-color:transparent}
+.cfg-item.active .f{color:var(--md-on-secondary-container);opacity:.75}
+.cfg-toolbar{display:flex;gap:10px;margin-bottom:12px;align-items:center;flex-wrap:wrap}
+.cfg-toolbar .field{height:40px;flex:1;min-width:180px}
+.cfg-rows{display:flex;flex-direction:column}
+.cfg-row{
+  display:grid;grid-template-columns:minmax(160px,1.1fr) minmax(200px,2fr) 60px;
+  gap:12px;align-items:center;padding:7px 4px;border-bottom:1px solid var(--md-outline-variant);
+}
+.cfg-row:hover{background:var(--md-surface-container-low)}
+.cfg-row .k{font-weight:600;font-size:13px;overflow:hidden;text-overflow:ellipsis}
+.cfg-row .k .path{display:block;font-weight:400;font-size:11px;color:var(--md-on-surface-variant)}
+.cfg-row input[type=text],.cfg-row input[type=number]{
+  width:100%;height:34px;border:1px solid var(--md-outline);border-radius:var(--radius-s);
+  padding:0 10px;background:var(--md-surface-container-lowest);color:var(--md-on-surface);
+  font-family:"JetBrains Mono",Consolas,monospace;font-size:13px;outline:none;
+}
+.cfg-row input:focus{border-color:var(--md-primary);border-width:2px}
+.cfg-row .ok-mark{color:var(--md-ok);font-size:12px;opacity:0;transition:opacity .3s}
+.cfg-row .ok-mark.show{opacity:1}
+/* ===== Settings / Customize ===== */
+.set-row{
+  display:flex;align-items:center;gap:12px;padding:9px 4px;
+  border-bottom:1px solid var(--md-outline-variant);
+}
+.set-row:last-child{border-bottom:none}
+.set-row .grow{flex:1;min-width:0}
+.set-row .desc{font-size:11.5px;color:var(--md-on-surface-variant)}
+.set-row label.chk{display:flex;align-items:center;gap:10px;cursor:pointer;font-size:13.5px;font-weight:500}
+.set-row label.chk input{width:17px;height:17px;accent-color:var(--md-primary)}
+.move-btn{
+  width:30px;height:30px;border-radius:8px;border:1px solid var(--md-outline-variant);
+  background:var(--md-surface-container-low);cursor:pointer;color:var(--md-on-surface-variant);
+  font-weight:700;font-size:14px;line-height:1;
+}
+.move-btn:hover{background:var(--md-secondary-container);color:var(--md-on-secondary-container)}
+.move-btn:disabled{opacity:.35;cursor:default;background:var(--md-surface-container-low)}
+.move-btn.del:hover{background:var(--md-error-container);color:var(--md-error)}
+.seg{display:inline-flex;background:var(--md-surface-container-highest);border-radius:var(--radius-xl);padding:3px;gap:3px}
+.seg button{
+  border:none;background:transparent;height:34px;padding:0 18px;border-radius:var(--radius-xl);
+  cursor:pointer;font-size:13px;font-weight:600;color:var(--md-on-surface-variant);
+}
+.seg button.active{background:var(--md-primary);color:var(--md-on-primary)}
+.swatches{display:flex;gap:10px;flex-wrap:wrap;align-items:center;margin-top:8px}
+.swatch{
+  width:34px;height:34px;border-radius:50%;border:2px solid var(--md-outline-variant);
+  cursor:pointer;position:relative;padding:0;
+}
+.swatch.active{border-color:var(--md-on-surface);box-shadow:0 0 0 2px var(--md-surface-container) inset}
+.swatch.default{background:linear-gradient(135deg,#6750A4 50%,#D0BCFF 50%)}
+.swatch input[type=color]{position:absolute;inset:0;opacity:0;width:100%;height:100%;cursor:pointer;border:none;padding:0}
+.qa-row{
+  display:grid;grid-template-columns:1.1fr 1.5fr auto auto auto;gap:8px;align-items:center;
+  padding:8px 4px;border-bottom:1px solid var(--md-outline-variant);
+}
+.qa-row:last-child{border-bottom:none}
+.qa-row input[type=text]{
+  width:100%;height:36px;border:1px solid var(--md-outline);border-radius:var(--radius-s);
+  padding:0 10px;background:var(--md-surface-container-lowest);color:var(--md-on-surface);
+  font-size:13px;outline:none;
+}
+.qa-row input[type=text]:focus{border-color:var(--md-primary);border-width:2px}
+.qa-row input.cmd{font-family:"JetBrains Mono",Consolas,monospace}
+.qa-row select{height:36px;font-size:13px}
+@media(max-width:720px){
+  .qa-row{grid-template-columns:1fr 1fr;gap:6px}
+  .cfg-row{grid-template-columns:1fr}
+}
+.save-status{font-size:12.5px;color:var(--md-ok);opacity:0;transition:opacity .3s;font-weight:600}
+.save-status.show{opacity:1}
+.save-status.err{color:var(--md-error)}
+.settings-footer{display:flex;gap:12px;align-items:center;margin-top:6px;flex-wrap:wrap}
+/* ===== Logs ===== */
+.logs-wrap{
+  background:#0C0C0E;border-radius:var(--radius-m);padding:12px 14px;height:calc(100vh - 240px);
+  min-height:320px;overflow:auto;font-family:"JetBrains Mono",Consolas,monospace;font-size:12.5px;
+  line-height:1.5;
+}
+.logs-wrap .line{white-space:pre-wrap;word-break:break-word;color:#C9CDD3}
+.logs-controls{display:flex;gap:10px;align-items:center;margin-bottom:12px;flex-wrap:wrap}
+.logs-controls .spacer{flex:1}
+/* ANSI */
+.a30{color:#3B3B3D}.a31{color:#E06C75}.a32{color:#98C379}.a33{color:#E5C07B}
+.a34{color:#61AFEF}.a35{color:#C678DD}.a36{color:#56B6C2}.a37{color:#DCDFE4}
+.a90{color:#5C6370}.a91{color:#FF7B86}.a92{color:#A8D98B}.a93{color:#F0D399}
+.a94{color:#84C7F5}.a95{color:#DB8BE0}.a96{color:#63C5DA}.a97{color:#FFFFFF}
+.ab{font-weight:700}.ad{text-decoration:underline}
+/* ===== Snackbar ===== */
+#snackbar{
+  position:fixed;left:50%;bottom:26px;transform:translate(-50%,80px);z-index:200;
+  background:#322F35;color:#F5EFF7;padding:12px 18px;border-radius:var(--radius-s);
+  font-size:13.5px;box-shadow:var(--shadow-3);transition:transform .25s ease;max-width:min(560px,90vw);
+}
+#snackbar.show{transform:translate(-50%,0)}
+#snackbar.err{background:var(--md-error);color:var(--md-on-error)}
+.spinner{display:inline-block;width:16px;height:16px;border:2px solid rgba(255,255,255,.35);
+  border-top-color:currentColor;border-radius:50%;animation:spin .7s linear infinite;vertical-align:-3px}
+@keyframes spin{to{transform:rotate(360deg)}}
+.empty{color:var(--md-on-surface-variant);font-size:13px;padding:14px 0;text-align:center}
+</style>
+<script>
+/* resolve light/dark before first paint (settings load async right after) */
+document.documentElement.dataset.mode =
+  matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
+</script>
+</head>
+<body>
+
+<div id="app">
+  <nav id="nav">
+    <div id="brand">Z</div>
+    <div id="nav-items"><!-- rendered dynamically --></div>
+  </nav>
+
+  <div id="main">
+    <header id="topbar">
+      <h1 id="view-title">Dashboard</h1>
+      <span class="chip off" id="conn-chip"><span class="dot"></span>checking…</span>
+      <span class="sub" id="version-sub"></span>
+    </header>
+
+    <div id="content">
+      <!-- ============ DASHBOARD ============ -->
+      <section class="view active" id="view-dash">
+        <div class="grid cols-4" style="margin-bottom:16px">
+          <div class="stat" data-widget="conn">
+            <div class="label">Connection</div>
+            <div class="value" id="st-conn">—</div>
+            <div class="sub" id="st-conn-sub"></div>
+          </div>
+          <div class="stat" data-widget="player">
+            <div class="label">Player</div>
+            <div class="value" id="st-player">—</div>
+            <div class="sub" id="st-player-sub"></div>
+          </div>
+          <div class="stat" data-widget="uptime">
+            <div class="label">Uptime</div>
+            <div class="value" id="st-uptime">—</div>
+            <div class="sub" id="st-tps">TPS: —</div>
+          </div>
+          <div class="stat" data-widget="modules">
+            <div class="label">Modules</div>
+            <div class="value" id="st-modules">—</div>
+            <div class="sub" id="st-modules-sub"></div>
+          </div>
+        </div>
+        <div class="grid cols-3">
+          <div class="card" data-widget="position">
+            <h2>Position <span class="hint" id="st-world"></span></h2>
+            <div class="grid cols-3">
+              <div class="stat"><div class="label">X</div><div class="value" id="st-x">—</div></div>
+              <div class="stat"><div class="label">Y</div><div class="value" id="st-y">—</div></div>
+              <div class="stat"><div class="label">Z</div><div class="value" id="st-z">—</div></div>
+            </div>
+          </div>
+          <div class="card" data-widget="queue">
+            <h2>Queue</h2>
+            <div class="grid">
+              <div class="stat"><div class="label">In Queue</div><div class="value" id="st-queue">—</div></div>
+              <div class="stat"><div class="label">Priority</div><div class="value" id="st-prio">—</div></div>
+            </div>
+          </div>
+          <div class="card" data-widget="actions">
+            <h2>Quick actions</h2>
+            <div id="quick-actions" style="display:flex;gap:10px;flex-wrap:wrap"></div>
+            <div class="output" id="quick-out" style="margin-top:12px"></div>
+          </div>
+        </div>
+      </section>
+
+      <!-- ============ COMMANDS ============ -->
+      <section class="view" id="view-commands">
+        <div class="card">
+          <h2>Run a command <span class="hint">output is captured from the proxy</span></h2>
+          <div class="cmd-run">
+            <div class="field">
+              <span style="color:var(--md-primary);font-weight:700">/</span>
+              <input id="cmd-input" placeholder="antiAFK on" autocomplete="off" spellcheck="false">
+            </div>
+            <button class="btn filled" id="cmd-run-btn">Run</button>
+            <div class="suggestions" id="cmd-suggestions"></div>
+          </div>
+          <div class="history" id="cmd-history"></div>
+          <div class="output" id="cmd-output" style="margin-top:14px"></div>
+        </div>
+        <div class="card">
+          <h2>Available commands <span class="hint" id="cmd-count"></span></h2>
+          <div style="margin-bottom:10px" class="field">
+            <input id="cmd-filter" placeholder="Filter commands…">
+          </div>
+          <div style="overflow-x:auto">
+            <table class="cmd-list">
+              <thead><tr><th>Command</th><th>Category</th><th>Usage</th><th>Description</th></tr></thead>
+              <tbody id="cmd-table"></tbody>
+            </table>
+          </div>
+        </div>
+      </section>
+
+      <!-- ============ MODULES ============ -->
+      <section class="view" id="view-modules">
+        <div class="card">
+          <h2>Modules <span class="hint" id="mod-count"></span></h2>
+          <div id="mod-grid" class="grid cols-3"></div>
+        </div>
+      </section>
+
+      <!-- ============ CONFIG ============ -->
+      <section class="view" id="view-config">
+        <div class="cfg-layout">
+          <div class="card" style="margin-bottom:0">
+            <h2>Config files</h2>
+            <div class="cfg-list" id="cfg-list"></div>
+          </div>
+          <div class="card" style="margin-bottom:0">
+            <h2 id="cfg-title">Select a config</h2>
+            <div class="cfg-toolbar">
+              <div class="field"><input id="cfg-filter" placeholder="Filter fields…"></div>
+              <button class="btn tonal small" id="cfg-save-btn">Save to disk</button>
+            </div>
+            <div class="cfg-rows" id="cfg-rows">
+              <div class="empty">Choose a config file on the left.</div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- ============ LOGS ============ -->
+      <section class="view" id="view-logs">
+        <div class="logs-controls">
+          <button class="btn tonal small" id="logs-pause">Pause</button>
+          <button class="btn text small" id="logs-clear">Clear</button>
+          <label style="display:flex;align-items:center;gap:6px;font-size:13px;color:var(--md-on-surface-variant)">
+            <input type="checkbox" id="logs-autoscroll" checked> auto-scroll
+          </label>
+          <span class="spacer"></span>
+          <span class="chip off" id="logs-ws">ws: connecting…</span>
+        </div>
+        <div class="logs-wrap" id="logs-view"></div>
+      </section>
+
+      <!-- ============ CUSTOMIZE ============ -->
+      <section class="view" id="view-customize">
+        <div class="grid cols-2" style="grid-template-columns:repeat(auto-fit,minmax(340px,1fr))">
+          <div class="card">
+            <h2>Appearance</h2>
+            <div class="set-row">
+              <div class="grow">
+                <div style="font-weight:600;font-size:13.5px">Theme</div>
+                <div class="desc">System follows your device's light/dark setting</div>
+              </div>
+              <div class="seg" id="theme-seg">
+                <button data-mode-opt="system">System</button>
+                <button data-mode-opt="light">Light</button>
+                <button data-mode-opt="dark">Dark</button>
+              </div>
+            </div>
+            <div class="set-row" style="align-items:flex-start">
+              <div class="grow">
+                <div style="font-weight:600;font-size:13.5px">Accent color</div>
+                <div class="desc">Recolors buttons, tabs and highlights across the panel</div>
+                <div class="swatches" id="accent-swatches"></div>
+              </div>
+            </div>
+          </div>
+
+          <div class="card">
+            <h2>Navigation tabs <span class="hint">show / hide &amp; reorder</span></h2>
+            <div id="tab-rows"></div>
+          </div>
+
+          <div class="card">
+            <h2>Dashboard widgets <span class="hint">toggle visibility</span></h2>
+            <div id="widget-rows"></div>
+          </div>
+
+          <div class="card">
+            <h2>Quick actions <span class="hint">buttons on the dashboard</span></h2>
+            <div id="qa-rows"></div>
+            <div class="settings-footer">
+              <button class="btn tonal small" id="qa-add">+ Add action</button>
+            </div>
+          </div>
+        </div>
+        <div class="card">
+          <div class="settings-footer">
+            <button class="btn text small" id="ui-reset">Reset all customization</button>
+            <span class="save-status" id="save-status">Saved ✓</span>
+            <span class="desc" style="margin-left:auto;color:var(--md-on-surface-variant);font-size:12px">
+              Changes save automatically and sync to <code>md3-panel.json</code>
+            </span>
+          </div>
+        </div>
+      </section>
+    </div>
+  </div>
+</div>
+
+<div id="snackbar"></div>
+
+<script>
+'use strict';
+/* ================= constants / state ================= */
+const TAB_META = {
+  dash:    {label:'Dashboard', title:'Dashboard', icon:'<svg viewBox="0 0 24 24"><path d="M4 4h7v7H4V4zm9 0h7v7h-7V4zM4 13h7v7H4v-7zm9 0h7v7h-7v-7z"/></svg>'},
+  commands:{label:'Commands', title:'Commands', icon:'<svg viewBox="0 0 24 24"><path d="M4 5h16a1 1 0 011 1v12a1 1 0 01-1 1H4a1 1 0 01-1-1V6a1 1 0 011-1zm3.2 3.6L6.4 7.4 4 9.8l2.4 2.4.8-1.2L8 9.8l-.8-1.2zM11 15h6v-1.6h-6V15z"/></svg>'},
+  modules: {label:'Modules', title:'Modules', icon:'<svg viewBox="0 0 24 24"><path d="M10.5 3.5a2.5 2.5 0 015 0V5h4a1 1 0 011 1v4h-1.5a2.5 2.5 0 010-5H16v-.5a1 1 0 00-1-1h-1.5v.5a2.5 2.5 0 01-3 0V4.5a1 1 0 00-1-1h.0zM3.5 10.5a2.5 2.5 0 015 0v.5H10a1 1 0 011 1v1.5h-.5a2.5 2.5 0 010-5H9v-.5a1 1 0 00-1-1H7.5v.5a2.5 2.5 0 01-4 0v.0zm0 8a2.5 2.5 0 015 0V20a1 1 0 001 1h4a1 1 0 001-1v-1.5a2.5 2.5 0 015 0V21a2 2 0 01-2 2H5.5a2 2 0 01-2-2v-2.5z"/></svg>'},
+  config:  {label:'Config', title:'Config', icon:'<svg viewBox="0 0 24 24"><path d="M4 7h9a4 4 0 010 8H4V7zm0 10h6.5a3 3 0 000-6H4v6zM17 6.5a2.5 2.5 0 110 5 2.5 2.5 0 010-5zM6.5 12A2.5 2.5 0 116.5 17a2.5 2.5 0 010-5z"/></svg>'},
+  logs:    {label:'Logs', title:'Logs', icon:'<svg viewBox="0 0 24 24"><path d="M4 5h16v2H4V5zm0 4h16v2H4V9zm0 4h10v2H4v-2zm0 4h13v2H4v-2z"/></svg>'}
+};
+const CUSTOMIZE_META = {label:'Customize', title:'Customize',
+  icon:'<svg viewBox="0 0 24 24"><path d="M12 3a9 9 0 000 18c1.7 0 2.5-1 2.5-2 0-.6-.3-1-.6-1.4-.3-.4-.6-.8-.6-1.3 0-1.1.9-2 2-2h1.9c2.3 0 4.2-1.9 4.2-4.2C21.4 5.8 17.1 3 12 3zM6.5 12a1.5 1.5 0 110-3 1.5 1.5 0 010 3zm3-4a1.5 1.5 0 110-3 1.5 1.5 0 010 3zm5 0a1.5 1.5 0 110-3 1.5 1.5 0 010 3zm3 4a1.5 1.5 0 110-3 1.5 1.5 0 010 3z"/></svg>'};
+const WIDGET_META = [
+  ['conn','Connection tile'],['player','Player tile'],['uptime','Uptime tile'],
+  ['modules','Modules tile'],['position','Position card'],['queue','Queue card'],
+  ['actions','Quick actions card']
+];
+const STYLES = ['tonal','filled','outlined','danger'];
+const ACCENTS = ['#6750A4','#0061A4','#006A6A','#386A20','#8F5100','#B3261E','#BA1A72','#4656B3'];
+const DEFAULT_UI = {
+  themeMode:'system', accent:'',
+  tabOrder:['dash','commands','modules','config','logs'],
+  hiddenTabs:[], hiddenWidgets:[],
+  quickActions:[
+    {label:'status', command:'status', style:'tonal'},
+    {label:'queueStatus', command:'queueStatus', style:'tonal'},
+    {label:'reconnect', command:'reconnect', style:'filled'},
+    {label:'disconnect', command:'disconnect', style:'danger'},
+    {label:'tickrate', command:'tps', style:'tonal'}
+  ]
+};
+
+let ui = normalizeUi(null);
+let currentView = 'dash';
+let statusTimer = null;
+let commands = [];
+let configs = [];
+let activeConfig = null;
+let cfgFilter = '';
+let cmdHistory = JSON.parse(localStorage.getItem('md3cmdhistory') || '[]');
+let logsPaused = false;
+let pausedLogBuf = [];
+let lastLogIndex = -1;
+let ws = null, wsRetry = 0;
+let uiSaveTimer = null;
+
+const $ = id => document.getElementById(id);
+const esc = s => String(s).replace(/[&<>"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+
+function snack(msg, err) {
+  const el = $('snackbar');
+  el.textContent = msg;
+  el.classList.toggle('err', !!err);
+  el.classList.add('show');
+  clearTimeout(el._t);
+  el._t = setTimeout(() => el.classList.remove('show'), 3200);
+}
+
+async function api(path, opts = {}) {
+  const res = await fetch(path, opts);
+  let data = null;
+  const text = await res.text();
+  try { data = text ? JSON.parse(text) : null; } catch { data = {raw: text}; }
+  if (!res.ok) throw new Error(data && data.error ? data.error : ('HTTP ' + res.status));
+  return data;
+}
+const postJson = (path, body) => api(path, {
+  method: 'POST', headers: {'Content-Type': 'application/json'},
+  body: JSON.stringify(body ?? {})
+});
+
+/* ================= UI settings: model ================= */
+function normalizeUi(s) {
+  const d = DEFAULT_UI;
+  if (!s || typeof s !== 'object') return JSON.parse(JSON.stringify(d));
+  return {
+    themeMode: ['system','light','dark'].includes(s.themeMode) ? s.themeMode : d.themeMode,
+    accent: typeof s.accent === 'string' && /^#[0-9a-fA-F]{6}$/.test(s.accent) ? s.accent : '',
+    tabOrder: Array.isArray(s.tabOrder) && s.tabOrder.length
+      ? [...new Set(s.tabOrder.filter(t => TAB_META[t]))] : [...d.tabOrder],
+    hiddenTabs: Array.isArray(s.hiddenTabs) ? s.hiddenTabs.filter(t => TAB_META[t]) : [],
+    hiddenWidgets: Array.isArray(s.hiddenWidgets)
+      ? s.hiddenWidgets.filter(w => WIDGET_META.some(m => m[0] === w)) : [],
+    quickActions: Array.isArray(s.quickActions)
+      ? s.quickActions.filter(a => a && a.label && a.command).map(a => ({
+          label: String(a.label).slice(0,40),
+          command: String(a.command).slice(0,120),
+          style: STYLES.includes(a.style) ? a.style : 'tonal'
+        })) : [...d.quickActions]
+  };
+}
+async function loadUi() {
+  try {
+    ui = normalizeUi(await api('/api/panel/ui'));
+  } catch (e) {
+    // keep defaults if the panel isn't reachable yet
+    ui = normalizeUi(null);
+  }
+  applyTheme(); renderNav(); applyWidgets(); renderQuickActions();
+}
+/* debounced auto-save */
+function scheduleUiSave() {
+  clearTimeout(uiSaveTimer);
+  uiSaveTimer = setTimeout(saveUi, 700);
+}
+async function saveUi() {
+  const el = $('save-status');
+  try {
+    await postJson('/api/panel/ui', ui);
+    el.textContent = 'Saved ✓';
+    el.classList.remove('err');
+  } catch (e) {
+    el.textContent = 'Save failed: ' + e.message;
+    el.classList.add('err');
+  }
+  el.classList.add('show');
+  clearTimeout(el._t);
+  el._t = setTimeout(() => el.classList.remove('show'), 2500);
+}
+
+/* ================= theme ================= */
+function resolveMode() {
+  if (ui.themeMode === 'system')
+    return matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
+  return ui.themeMode;
+}
+function hexToHsl(hex) {
+  const r = parseInt(hex.slice(1,3),16)/255, g = parseInt(hex.slice(3,5),16)/255, b = parseInt(hex.slice(5,7),16)/255;
+  const max = Math.max(r,g,b), min = Math.min(r,g,b);
+  let h = 0, s = 0; const l = (max+min)/2;
+  if (max !== min) {
+    const d = max-min;
+    s = l > .5 ? d/(2-max-min) : d/(max+min);
+    switch (max) {
+      case r: h = (g-b)/d + (g<b?6:0); break;
+      case g: h = (b-r)/d + 2; break;
+      default: h = (r-g)/d + 4;
+    }
+    h /= 6;
+  }
+  return {h: Math.round(h*360), s: Math.round(s*100), l: Math.round(l*100)};
+}
+const clamp = (v,min,max) => Math.min(max, Math.max(min, v));
+function applyTheme() {
+  const root = document.documentElement;
+  const mode = resolveMode();
+  root.dataset.mode = mode;
+  const OVER = ['--md-primary','--md-on-primary','--md-primary-container',
+    '--md-on-primary-container','--md-secondary-container','--md-on-secondary-container'];
+  OVER.forEach(t => root.style.removeProperty(t));
+  if (!/^#[0-9a-fA-F]{6}$/.test(ui.accent || '')) return;   // default MD3 palette
+  const {h, s, l} = hexToHsl(ui.accent);
+  const dark = mode === 'dark';
+  const pS = clamp(s, 40, 95);
+  const pL = dark ? clamp(l, 62, 80) : clamp(l, 30, 55);
+  root.style.setProperty('--md-primary', `hsl(${h} ${pS}% ${pL}%)`);
+  root.style.setProperty('--md-on-primary', pL >= 56 ? '#1B1B1F' : '#FFFFFF');
+  root.style.setProperty('--md-primary-container',
+    dark ? `hsl(${h} ${clamp(pS*0.5,15,50)}% 30%)` : `hsl(${h} ${clamp(pS*0.5,15,50)}% 88%)`);
+  root.style.setProperty('--md-on-primary-container',
+    dark ? `hsl(${h} ${clamp(pS*0.7,20,70)}% 88%)` : `hsl(${h} ${clamp(pS*0.7,20,70)}% 16%)`);
+  root.style.setProperty('--md-secondary-container',
+    dark ? `hsl(${h} 14% 27%)` : `hsl(${h} 22% 90%)`);
+  root.style.setProperty('--md-on-secondary-container',
+    dark ? `hsl(${h} 30% 88%)` : `hsl(${h} 35% 15%)`);
+}
+matchMedia('(prefers-color-scheme: dark)').addEventListener('change', () => {
+  if (ui.themeMode === 'system') applyTheme();
+});
+
+/* ================= navigation ================= */
+function visibleTabs() {
+  return ui.tabOrder.filter(t => !ui.hiddenTabs.includes(t));
+}
+function navButton(id, meta, active) {
+  return `<button class="nav-item ${active ? 'active' : ''}" data-view="${id}">${meta.icon}${meta.label}</button>`;
+}
+function renderNav() {
+  const visible = visibleTabs();
+  if (!visible.includes(currentView) && currentView !== 'customize') {
+    currentView = visible[0] || 'customize';
+  }
+  $('nav-items').innerHTML =
+    visible.map(id => navButton(id, TAB_META[id], id === currentView)).join('') +
+    navButton('customize', CUSTOMIZE_META, currentView === 'customize');
+  $('nav-items').querySelectorAll('.nav-item').forEach(b => {
+    b.onclick = () => switchView(b.dataset.view);
+  });
+  syncView();
+}
+function syncView() {
+  document.querySelectorAll('.view').forEach(s =>
+    s.classList.toggle('active', s.id === 'view-' + currentView));
+  const meta = currentView === 'customize' ? CUSTOMIZE_META : TAB_META[currentView];
+  $('view-title').textContent = meta ? meta.title : 'Panel';
+}
+function switchView(v) {
+  currentView = v;
+  renderNav();
+  if (v === 'logs') connectLogsWS();
+  if (v === 'config') loadConfigs();
+  if (v === 'commands' && commands.length === 0) loadCommands();
+  if (v === 'modules') loadModules();
+  if (v === 'customize') renderCustomize();
+}
+
+/* ================= widgets & quick actions ================= */
+function applyWidgets() {
+  document.querySelectorAll('[data-widget]').forEach(el => {
+    el.style.display = ui.hiddenWidgets.includes(el.dataset.widget) ? 'none' : '';
+  });
+}
+function renderQuickActions() {
+  const box = $('quick-actions');
+  if (!ui.quickActions.length) {
+    box.innerHTML = '<span class="empty" style="padding:4px 0">No quick actions — add some in the Customize tab</span>';
+    return;
+  }
+  box.innerHTML = ui.quickActions.map((a, i) =>
+    `<button class="btn small ${esc(a.style)}" data-qa="${i}">${esc(a.label)}</button>`).join('');
+  box.querySelectorAll('[data-qa]').forEach(b => {
+    b.onclick = () => runQuickAction(ui.quickActions[+b.dataset.qa]);
+  });
+}
+async function runQuickAction(action) {
+  const out = $('quick-out');
+  out.className = 'output show';
+  out.textContent = 'Running /' + action.command + ' …';
+  try {
+    const r = await postJson('/api/commands/run', {command: action.command});
+    out.className = 'output show ' + (r.ok ? 'ok' : 'err');
+    out.textContent = r.output || '(no output)';
+    refreshStatus();
+  } catch (e) { out.className = 'output show err'; out.textContent = e.message; }
+}
+
+/* ================= customize view ================= */
+function renderCustomize() {
+  // theme segmented control
+  $('theme-seg').querySelectorAll('button').forEach(b => {
+    b.classList.toggle('active', b.dataset.modeOpt === ui.themeMode);
+    b.onclick = () => {
+      ui.themeMode = b.dataset.modeOpt;
+      applyTheme();
+      renderCustomize();
+      scheduleUiSave();
+    };
+  });
+  // accent swatches
+  const sw = $('accent-swatches');
+  sw.innerHTML =
+    `<button class="swatch default ${ui.accent === '' ? 'active' : ''}" data-accent="" title="Default MD3 palette"></button>` +
+    ACCENTS.map(c =>
+      `<button class="swatch ${ui.accent.toUpperCase() === c.toUpperCase() ? 'active' : ''}" data-accent="${c}" style="background:${c}" title="${c}"></button>`).join('') +
+    `<span class="swatch" title="Custom color" style="background:conic-gradient(#f66,#fd6,#6f6,#6ff,#66f,#f6f,#f66);overflow:hidden">
+       <input type="color" id="accent-custom" value="${/^#[0-9a-fA-F]{6}$/.test(ui.accent) ? ui.accent : '#6750A4'}">
+     </span>`;
+  sw.querySelectorAll('[data-accent]').forEach(b => {
+    b.onclick = () => {
+      ui.accent = b.dataset.accent;
+      applyTheme();
+      renderCustomize();
+      scheduleUiSave();
+    };
+  });
+  const custom = $('accent-custom');
+  custom.oninput = () => {
+    ui.accent = custom.value;
+    applyTheme();
+    sw.querySelectorAll('[data-accent]').forEach(x => x.classList.remove('active'));
+    scheduleUiSave();
+  };
+  // tabs
+  $('tab-rows').innerHTML = ui.tabOrder.map((id, i) => `
+    <div class="set-row">
+      <label class="chk grow">
+        <input type="checkbox" data-tab-vis="${id}" ${ui.hiddenTabs.includes(id) ? '' : 'checked'}>
+        <span>${esc(TAB_META[id].label)}</span>
+      </label>
+      <button class="move-btn" data-tab-up="${i}" ${i === 0 ? 'disabled' : ''} title="Move up">↑</button>
+      <button class="move-btn" data-tab-down="${i}" ${i === ui.tabOrder.length-1 ? 'disabled' : ''} title="Move down">↓</button>
+    </div>`).join('');
+  $('tab-rows').querySelectorAll('[data-tab-vis]').forEach(cb => {
+    cb.onchange = () => {
+      const id = cb.dataset.tabVis;
+      ui.hiddenTabs = cb.checked
+        ? ui.hiddenTabs.filter(t => t !== id)
+        : [...new Set([...ui.hiddenTabs, id])];
+      renderNav(); scheduleUiSave();
+    };
+  });
+  bindMoveButtons($('tab-rows'), 'tab', (from, to) => {
+    const arr = ui.tabOrder;
+    [arr[from], arr[to]] = [arr[to], arr[from]];
+    renderNav(); renderCustomize(); scheduleUiSave();
+  });
+  // widgets
+  $('widget-rows').innerHTML = WIDGET_META.map(([key, label]) => `
+    <div class="set-row">
+      <label class="chk grow">
+        <input type="checkbox" data-widget-vis="${key}" ${ui.hiddenWidgets.includes(key) ? '' : 'checked'}>
+        <span>${esc(label)}</span>
+      </label>
+    </div>`).join('');
+  $('widget-rows').querySelectorAll('[data-widget-vis]').forEach(cb => {
+    cb.onchange = () => {
+      const key = cb.dataset.widgetVis;
+      ui.hiddenWidgets = cb.checked
+        ? ui.hiddenWidgets.filter(w => w !== key)
+        : [...new Set([...ui.hiddenWidgets, key])];
+      applyWidgets(); scheduleUiSave();
+    };
+  });
+  // quick actions
+  const qaRows = $('qa-rows');
+  qaRows.innerHTML = ui.quickActions.length === 0
+    ? '<div class="empty">No quick actions yet — add one below.</div>'
+    : ui.quickActions.map((a, i) => `
+    <div class="qa-row">
+      <input type="text" data-qa-label="${i}" value="${esc(a.label)}" placeholder="Label" maxlength="40">
+      <input type="text" class="cmd" data-qa-cmd="${i}" value="${esc(a.command)}" placeholder="command (e.g. antiAFK on)" maxlength="120">
+      <select data-qa-style="${i}">
+        ${STYLES.map(s => `<option value="${s}" ${a.style === s ? 'selected' : ''}>${s}</option>`).join('')}
+      </select>
+      <span style="display:flex;gap:5px">
+        <button class="move-btn" data-qa-up="${i}" ${i === 0 ? 'disabled' : ''}>↑</button>
+        <button class="move-btn" data-qa-down="${i}" ${i === ui.quickActions.length-1 ? 'disabled' : ''}>↓</button>
+      </span>
+      <button class="move-btn del" data-qa-del="${i}" title="Remove">✕</button>
+    </div>`).join('');
+  qaRows.querySelectorAll('[data-qa-label]').forEach(inp => {
+    inp.oninput = () => { ui.quickActions[+inp.dataset.qaLabel].label = inp.value;
+      renderQuickActions(); scheduleUiSave(); };
+  });
+  qaRows.querySelectorAll('[data-qa-cmd]').forEach(inp => {
+    inp.oninput = () => { ui.quickActions[+inp.dataset.qaCmd].command = inp.value;
+      renderQuickActions(); scheduleUiSave(); };
+  });
+  qaRows.querySelectorAll('[data-qa-style]').forEach(sel => {
+    sel.onchange = () => { ui.quickActions[+sel.dataset.qaStyle].style = sel.value;
+      renderQuickActions(); scheduleUiSave(); };
+  });
+  qaRows.querySelectorAll('[data-qa-del]').forEach(b => {
+    b.onclick = () => { ui.quickActions.splice(+b.dataset.qaDel, 1);
+      renderCustomize(); renderQuickActions(); scheduleUiSave(); };
+  });
+  bindMoveButtons(qaRows, 'qa', (from, to) => {
+    const arr = ui.quickActions;
+    [arr[from], arr[to]] = [arr[to], arr[from]];
+    renderCustomize(); renderQuickActions(); scheduleUiSave();
+  });
+}
+function bindMoveButtons(container, prefix, move) {
+  container.querySelectorAll(`[data-${prefix}-up]`).forEach(b => {
+    b.onclick = () => { const i = +b.dataset[prefix + 'Up']; if (i > 0) move(i, i-1); };
+  });
+  container.querySelectorAll(`[data-${prefix}-down]`).forEach(b => {
+    b.onclick = () => { const i = +b.dataset[prefix + 'Down']; move(i, i+1); };
+  });
+}
+$('qa-add').onclick = () => {
+  ui.quickActions.push({label:'New action', command:'', style:'tonal'});
+  renderCustomize(); renderQuickActions(); scheduleUiSave();
+};
+$('ui-reset').onclick = () => {
+  if (!confirm('Reset theme, tabs, widgets and quick actions to defaults?')) return;
+  ui = normalizeUi(null);
+  applyTheme(); renderNav(); applyWidgets(); renderQuickActions(); renderCustomize();
+  scheduleUiSave();
+  snack('Customization reset to defaults');
+};
+
+/* ================= dashboard status ================= */
+async function refreshStatus() {
+  try {
+    const s = await api('/api/status');
+    $('conn-chip').className = 'chip ' + (s.connected ? 'ok' : 'warn');
+    $('conn-chip').innerHTML = '<span class="dot"></span>' + (s.connected ? 'connected' : 'offline');
+    $('version-sub').textContent = 'v' + (s.version || '') + ' · MD3 Panel';
+
+    $('st-conn').textContent = s.connected ? 'Online' : 'Offline';
+    $('st-conn-sub').textContent = s.connected
+      ? (s.queue ? 'in queue #' + s.queuePosition : 'not in queue')
+      : 'not connected to server';
+
+    $('st-player').textContent = s.username || '—';
+    const hp = s.health;
+    $('st-player-sub').innerHTML = hp !== undefined
+      ? '❤ ' + Number(hp).toFixed(1) + ' HP · ' + esc(s.gamemode || '')
+      : esc(s.gamemode || '');
+
+    $('st-uptime').textContent = s.uptime || '—';
+    $('st-tps').textContent = 'TPS: ' + (s.tps || '—');
+
+    $('st-modules').textContent = s.modules
+      ? s.modules.enabled + ' / ' + s.modules.total : '—';
+    $('st-modules-sub').textContent = 'enabled modules';
+
+    if (s.pos) {
+      $('st-x').textContent = s.pos.x; $('st-y').textContent = s.pos.y; $('st-z').textContent = s.pos.z;
+      $('st-world').textContent = (s.dimension || '') + (s.gamemode ? ' · ' + s.gamemode : '');
+    }
+    $('st-queue').textContent = s.queue ? '#' + s.queuePosition : 'Not queued';
+    $('st-prio').textContent = s.prio ? 'Priority' : 'Normal';
+  } catch (e) {
+    snack('Status error: ' + e.message, true);
+  }
+}
+
+/* ================= commands ================= */
+async function loadCommands() {
+  try {
+    const d = await api('/api/commands');
+    commands = d.commands || [];
+    renderCmdTable();
+  } catch (e) { snack(e.message, true); }
+}
+function renderCmdTable() {
+  const f = $('cmd-filter').value.toLowerCase();
+  const rows = commands.filter(c =>
+    !f || c.name.toLowerCase().includes(f) || (c.description || '').toLowerCase().includes(f));
+  $('cmd-count').textContent = commands.length + ' registered';
+  $('cmd-table').innerHTML = rows.map(c => `
+    <tr>
+      <td class="cname">/${esc(c.name)}${c.aliases && c.aliases.length ? '<br><span style="color:var(--md-on-surface-variant);font-weight:400;font-size:11px">aka: ' + c.aliases.map(esc).join(', ') + '</span>' : ''}</td>
+      <td><span class="chip off">${esc(c.category)}</span></td>
+      <td style="font-family:monospace;font-size:12px">${(c.usage || []).map(u => esc(String(u))).filter(u => u !== '').map(u => '/' + esc(c.name) + ' ' + u).join('<br>') || '/' + esc(c.name)}</td>
+      <td style="max-width:340px;white-space:pre-wrap">${esc(c.description || '')}</td>
+    </tr>`).join('') || '<tr><td colspan="4" class="empty">No matches</td></tr>';
+}
+$('cmd-filter').oninput = renderCmdTable;
+
+let sugIdx = -1;
+async function updateSuggestions() {
+  const val = $('cmd-input').value.trim();
+  const box = $('cmd-suggestions');
+  if (!val) { box.classList.remove('show'); return; }
+  try {
+    const d = await api('/api/commands/suggest?input=' + encodeURIComponent(val));
+    const list = (d.suggestions || []).filter(s => s && s !== val);
+    if (!list.length) { box.classList.remove('show'); return; }
+    box.innerHTML = list.slice(0, 8).map((s, i) =>
+      `<div data-s="${esc(s)}" class="${i === sugIdx ? 'hl' : ''}">${esc(s)}</div>`).join('');
+    box.classList.add('show');
+    box.querySelectorAll('div').forEach(el => {
+      el.onmousedown = () => { $('cmd-input').value = el.dataset.s; box.classList.remove('show'); runCommand(); };
+    });
+  } catch { box.classList.remove('show'); }
+}
+$('cmd-input').addEventListener('input', () => { sugIdx = -1; updateSuggestions(); });
+$('cmd-input').addEventListener('blur', () => setTimeout(() => $('cmd-suggestions').classList.remove('show'), 150));
+$('cmd-input').addEventListener('keydown', e => {
+  const box = $('cmd-suggestions');
+  const items = box.querySelectorAll('div');
+  if (e.key === 'ArrowDown' && items.length) { e.preventDefault(); sugIdx = Math.min(sugIdx + 1, items.length - 1); updateSuggestions(); }
+  else if (e.key === 'ArrowUp' && items.length) { e.preventDefault(); sugIdx = Math.max(sugIdx - 1, 0); updateSuggestions(); }
+  else if (e.key === 'Enter') {
+    if (sugIdx >= 0 && items[sugIdx]) $('cmd-input').value = items[sugIdx].dataset.s;
+    box.classList.remove('show'); runCommand();
+  } else if (e.key === 'Escape') box.classList.remove('show');
+});
+$('cmd-run-btn').onclick = runCommand;
+
+async function runCommand() {
+  const input = $('cmd-input');
+  const cmd = input.value.trim().replace(/^\//, '');
+  if (!cmd) return;
+  const btn = $('cmd-run-btn'), out = $('cmd-output');
+  btn.disabled = true; btn.innerHTML = '<span class="spinner"></span>';
+  out.className = 'output show'; out.textContent = 'Running /' + cmd + ' …';
+  try {
+    const r = await postJson('/api/commands/run', {command: cmd});
+    out.className = 'output show ' + (r.ok ? 'ok' : 'err');
+    out.textContent = r.output || '(no output)';
+    if (r.ok) {
+      cmdHistory = [cmd, ...cmdHistory.filter(c => c !== cmd)].slice(0, 8);
+      localStorage.setItem('md3cmdhistory', JSON.stringify(cmdHistory));
+      renderHistory();
+      if (cmd === 'status' || cmd === 'plugins') refreshStatus();
+    }
+  } catch (e) { out.className = 'output show err'; out.textContent = e.message; }
+  finally { btn.disabled = false; btn.textContent = 'Run'; }
+}
+function renderHistory() {
+  $('cmd-history').innerHTML = cmdHistory.map(c =>
+    `<button class="chip off" data-h="${esc(c)}">/${esc(c)}</button>`).join('');
+  $('cmd-history').querySelectorAll('button').forEach(b => {
+    b.onclick = () => { $('cmd-input').value = b.dataset.h; runCommand(); };
+  });
+}
+
+/* ================= modules ================= */
+async function loadModules() {
+  try {
+    const d = await api('/api/modules');
+    renderModules(d.modules || []);
+  } catch (e) { snack(e.message, true); }
+}
+function renderModules(mods) {
+  $('mod-count').textContent = mods.filter(m => m.enabled).length + ' enabled / ' + mods.length + ' total';
+  $('mod-grid').innerHTML = mods.map(m => `
+    <div class="mod-card">
+      <div style="flex:1;min-width:0">
+        <div class="name">${esc(m.name)}</div>
+        <div class="state">${m.enabled ? 'enabled' : 'disabled'}${m.toggleable ? '' : ' · no toggle command'}</div>
+      </div>
+      <label class="mswitch">
+        <input type="checkbox" data-mod="${esc(m.name)}" ${m.enabled ? 'checked' : ''} ${m.toggleable ? '' : 'disabled'}>
+        <span class="track"></span><span class="thumb"></span>
+      </label>
+    </div>`).join('');
+  $('mod-grid').querySelectorAll('input[data-mod]').forEach(cb => {
+    cb.onchange = async () => {
+      cb.disabled = true;
+      try {
+        const r = await postJson('/api/modules/' + encodeURIComponent(cb.dataset.mod) + '?state=' + (cb.checked ? 'on' : 'off'));
+        if (!r.ok) { snack(r.output || 'Toggle failed', true); cb.checked = !cb.checked; }
+        else snack(cb.dataset.mod + (cb.checked ? ' enabled' : ' disabled'));
+        if (r.modules) renderModules(r.modules);
+      } catch (e) { snack(e.message, true); cb.checked = !cb.checked; }
+      finally { cb.disabled = false; }
+    };
+  });
+}
+
+/* ================= config ================= */
+async function loadConfigs() {
+  try {
+    configs = await api('/api/configs');
+    $('cfg-list').innerHTML = configs.map(c => `
+      <button class="cfg-item ${activeConfig === c.id ? 'active' : ''}" data-id="${esc(c.id)}">
+        ${esc(c.id)}<span class="f">${esc(c.file)}</span>
+      </button>`).join('');
+    $('cfg-list').querySelectorAll('button').forEach(b => {
+      b.onclick = () => selectConfig(b.dataset.id);
+    });
+    if (configs.length && !activeConfig) selectConfig(configs[0].id);
+    else if (activeConfig) renderConfigRows();
+  } catch (e) { snack(e.message, true); }
+}
+function selectConfig(id) {
+  activeConfig = id;
+  $('cfg-list').querySelectorAll('button').forEach(b =>
+    b.classList.toggle('active', b.dataset.id === id));
+  renderConfigRows();
+}
+function leafType(v) {
+  if (typeof v === 'boolean') return 'bool';
+  if (typeof v === 'number') return 'num';
+  if (typeof v === 'string') return 'str';
+  if (Array.isArray(v)) return 'array';
+  if (v && typeof v === 'object') return 'obj';
+  return 'other';
+}
+function renderConfigRows() {
+  const cfg = configs.find(c => c.id === activeConfig);
+  const rows = $('cfg-rows');
+  if (!cfg) { rows.innerHTML = '<div class="empty">Select a config file.</div>'; return; }
+  $('cfg-title').innerHTML = esc(cfg.id) + ' <span class="hint" style="font-size:12px;color:var(--md-on-surface-variant)">' + esc(cfg.file) + '</span>';
+  const f = cfgFilter.toLowerCase();
+  const flat = [];
+  (function walk(o, prefix) {
+    for (const [k, v] of Object.entries(o)) {
+      const path = prefix ? prefix + '.' + k : k;
+      const t = leafType(v);
+      if (t === 'obj' && v !== null) walk(v, path);
+      else flat.push({path, k, v, t});
+    }
+  })(cfg.config, '');
+  const visible = flat.filter(r => !f || r.path.toLowerCase().includes(f) || String(r.v).toLowerCase().includes(f));
+  if (!visible.length) { rows.innerHTML = '<div class="empty">No matching fields.</div>'; return; }
+  rows.innerHTML = visible.map(r => {
+    let input;
+    if (r.t === 'bool') {
+      input = `<label class="mswitch" style="justify-self:start"><input type="checkbox" data-path="${esc(r.path)}" data-type="bool" ${r.v ? 'checked' : ''}><span class="track"></span><span class="thumb"></span></label>`;
+    } else if (r.t === 'num') {
+      input = `<input type="number" data-path="${esc(r.path)}" data-type="num" value="${esc(r.v)}">`;
+    } else if (r.t === 'str') {
+      input = `<input type="text" data-path="${esc(r.path)}" data-type="str" value="${esc(r.v)}">`;
+    } else {
+      input = `<span style="font-size:12px;color:var(--md-on-surface-variant);font-family:monospace">${r.t === 'array' ? 'array (' + r.v.length + ')' : esc(String(r.v))}</span>`;
+    }
+    const parts = r.path.split('.');
+    const key = parts.pop();
+    return `<div class="cfg-row">
+      <div class="k" title="${esc(r.path)}">${esc(key)}<span class="path">${esc(parts.join('.'))}</span></div>
+      ${input}
+      <span class="ok-mark">✓</span>
+    </div>`;
+  }).join('');
+  wireConfigInputs(cfg);
+}
+function wireConfigInputs(cfg) {
+  const rows = $('cfg-rows');
+  rows.querySelectorAll('input[data-path]').forEach(inp => {
+    inp.addEventListener('change', () => scheduleCfgUpdate(cfg, inp));
+    if (inp.dataset.type !== 'bool') {
+      inp.addEventListener('keydown', e => { if (e.key === 'Enter') scheduleCfgUpdate(cfg, inp); });
+    }
+  });
+}
+const cfgPending = new Map();
+function scheduleCfgUpdate(cfg, inp) {
+  const key = inp.dataset.path;
+  clearTimeout(cfgPending.get(key));
+  cfgPending.set(key, setTimeout(() => doCfgUpdate(cfg, inp), 350));
+}
+async function doCfgUpdate(cfg, inp) {
+  let value;
+  if (inp.dataset.type === 'bool') value = inp.checked;
+  else if (inp.dataset.type === 'num') {
+    value = Number(inp.value);
+    if (inp.value === '' || isNaN(value)) { snack('Invalid number for ' + inp.dataset.path, true); return; }
+  } else value = inp.value;
+  try {
+    const updated = await postJson('/api/configs/' + encodeURIComponent(cfg.id) + '/update',
+      {path: inp.dataset.path, value});
+    cfg.config = updated;
+    const mark = inp.closest('.cfg-row').querySelector('.ok-mark');
+    if (mark) { mark.classList.add('show'); setTimeout(() => mark.classList.remove('show'), 1100); }
+  } catch (e) { snack(inp.dataset.path + ': ' + e.message, true); }
+}
+$('cfg-filter').addEventListener('input', () => { cfgFilter = $('cfg-filter').value; renderConfigRows(); });
+$('cfg-save-btn').onclick = async () => {
+  const btn = $('cfg-save-btn');
+  btn.disabled = true; btn.textContent = 'Saving…';
+  try { await postJson('/api/configs/save'); snack('Configs saved to disk'); }
+  catch (e) { snack(e.message, true); }
+  finally { btn.disabled = false; btn.textContent = 'Save to disk'; }
+};
+
+/* ================= logs ================= */
+function ansiToHtml(s) {
+  let out = '', open = [];
+  const re = /\u001b\[([0-9;]*)m/g;
+  let last = 0, m;
+  const closeAll = () => { if (open.length) { out += '</span>'; open = []; } };
+  while ((m = re.exec(s))) {
+    out += esc(s.slice(last, m.index));
+    last = re.lastIndex;
+    const codes = (m[1] || '0').split(';').filter(x => x !== '');
+    if (!codes.length) codes.push('0');
+    for (const cRaw of codes) {
+      const c = parseInt(cRaw, 10) || 0;
+      if (c === 0) { closeAll(); open = []; }
+      else if ((c >= 30 && c <= 37) || (c >= 90 && c <= 97)) {
+        if (open.length) { out += '</span>'; }
+        out += `<span class="a${c}">`; open = [1];
+      } else if (c === 1) { out += `<span class="ab">`; open.push(1); }
+      else if (c === 4) { out += `<span class="ad">`; open.push(1); }
+    }
+  }
+  out += esc(s.slice(last));
+  while (open.length) { out += '</span>'; open.pop(); }
+  return out;
+}
+function appendLogLine(ansi) {
+  const wrap = $('logs-view');
+  const div = document.createElement('div');
+  div.className = 'line';
+  div.innerHTML = ansiToHtml(String(ansi).replace(/\n$/, ''));
+  wrap.appendChild(div);
+  while (wrap.children.length > 3000) wrap.removeChild(wrap.firstChild);
+  if ($('logs-autoscroll').checked) wrap.scrollTop = wrap.scrollHeight;
+}
+function appendLog(index, ansi) {
+  if (index <= lastLogIndex) return;
+  lastLogIndex = index;
+  if (logsPaused) { pausedLogBuf.push({ansi}); return; }
+  appendLogLine(ansi);
+}
+async function loadInitialLogs() {
+  try {
+    const d = await api('/api/logs?from=0');
+    const wrap = $('logs-view');
+    wrap.innerHTML = '';
+    lastLogIndex = d.nextIndex ? d.nextIndex - 1 : -1;
+    for (const l of d.lines || []) appendLogLine(l.ansi);
+    wrap.scrollTop = wrap.scrollHeight;
+  } catch (e) { snack(e.message, true); }
+}
+function connectLogsWS() {
+  if (ws && (ws.readyState === 0 || ws.readyState === 1)) return;
+  const proto = location.protocol === 'https:' ? 'wss:' : 'ws:';
+  ws = new WebSocket(proto + '//' + location.host + '/api/logs/live');
+  $('logs-ws').className = 'chip warn';
+  $('logs-ws').textContent = 'ws: connecting…';
+  ws.onopen = () => {
+    wsRetry = 0;
+    $('logs-ws').className = 'chip ok';
+    $('logs-ws').textContent = 'ws: live';
+    api('/api/logs?from=' + Math.max(0, lastLogIndex)).then(d => {
+      for (const l of d.lines || []) appendLog(l.index, l.ansi);
+    }).catch(() => {});
+  };
+  ws.onmessage = e => {
+    try {
+      const m = JSON.parse(e.data);
+      if (m.type === 'log') {
+        if (m.index > lastLogIndex + 1) {
+          api('/api/logs?from=' + Math.max(0, lastLogIndex + 1)).then(d => {
+            for (const l of d.lines || []) appendLog(l.index, l.ansi);
+          }).catch(() => {});
+        }
+        appendLog(m.index, m.ansi);
+      }
+    } catch {}
+  };
+  ws.onclose = () => {
+    $('logs-ws').className = 'chip err';
+    $('logs-ws').textContent = 'ws: reconnecting…';
+    wsRetry = Math.min(wsRetry + 1, 6);
+    setTimeout(connectLogsWS, 1000 * Math.pow(2, wsRetry));
+  };
+  ws.onerror = () => { try { ws.close(); } catch {} };
+}
+$('logs-pause').onclick = () => {
+  logsPaused = !logsPaused;
+  $('logs-pause').textContent = logsPaused ? 'Resume' : 'Pause';
+  if (!logsPaused) {
+    const buf = pausedLogBuf; pausedLogBuf = [];
+    for (const l of buf) appendLogLine(l.ansi);
+    if ($('logs-autoscroll').checked) { const w = $('logs-view'); w.scrollTop = w.scrollHeight; }
+  }
+};
+$('logs-clear').onclick = () => { $('logs-view').innerHTML = ''; };
+
+/* ================= boot ================= */
+async function boot() {
+  await loadUi();
+  loadInitialLogs();
+  refreshStatus();
+  clearInterval(statusTimer);
+  statusTimer = setInterval(refreshStatus, 5000);
+  renderHistory();
+  loadModules();
+  connectLogsWS();
+  api('/api/configs').then(d => { configs = d; }).catch(() => {});
+}
+boot();
+</script>
+</body>
+</html>
