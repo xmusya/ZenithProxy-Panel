@@ -44,7 +44,7 @@ Everything is edited live on the site itself and auto-saved (debounced) to `plug
 - **Reset** — one click restores all customization to defaults
 
 ## Install
-1. Copy `build/libs/ZenithProxyMD3Panel-1.0.0.jar` into ZenithProxy's `plugins/` folder
+1. Grab ZenithProxyMD3Panel-1.0.0.jar from Releases and put it into your plugins/ directory
 2. Restart ZenithProxy
 3. Open `http://localhost:8090` (default) — no login needed
 
