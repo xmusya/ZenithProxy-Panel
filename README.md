@@ -14,6 +14,20 @@ Material Design 3 web panel for ZenithProxy (v1.0.0).
 - **Logs** — live console log tail over WebSocket with ANSI colors, pause/resume, auto-scroll, and gap-resync
 - **Customize** — full in-site UI customization (see below), auto-saved to `md3-panel.json`
 
+## Screenshots
+
+| Dashboard | Commands |
+| :---: | :---: |
+| ![Dashboard](screenshots/dashboard.png) | ![Commands](screenshots/commands.png) |
+
+| Modules | Config |
+| :---: | :---: |
+| ![Modules](screenshots/modules.png) | ![Config](screenshots/config.png) |
+
+| Logs | Customize |
+| :---: | :---: |
+| ![Logs](screenshots/logs.png) | ![Customize](screenshots/custom.png) |
+
 ## Customize tab
 Everything is edited live on the site itself and auto-saved (debounced) to `plugins/config/md3-panel.json`:
 
